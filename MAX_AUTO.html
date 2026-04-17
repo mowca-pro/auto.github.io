@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f1a">
+<title>MAX AUTO</title>
+<style>
+:root {
+  --bg: #0f0f1a;
+  --bg2: #161625;
+  --bg3: #1e1e30;
+  --bg4: #252538;
+  --accent: #e63030;
+  --accent2: #ff4444;
+  --gold: #f0a500;
+  --text: #f0f0f5;
+  --text2: #a0a0b8;
+  --text3: #606078;
+  --green: #2ecc71;
+  --blue: #3498db;
+  --border: rgba(255,255,255,0.07);
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+
+/* ===== SCREENS ===== */
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); transition: transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s; }
+.screen.hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
+.screen.slide-left { transform: translateX(-30%); opacity: 0; pointer-events: none; }
+
+/* ===== STATUS BAR ===== */
+.status-bar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; background: var(--bg); flex-shrink: 0; }
+.status-time { font-size: 14px; font-weight: 600; }
+.status-icons { display: flex; gap: 5px; align-items: center; font-size: 12px; color: var(--text2); }
+
+/* ===== NAV BAR ===== */
+.nav-bar { display: flex; background: var(--bg2); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 8px); flex-shrink: 0; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 0 6px; gap: 3px; cursor: pointer; transition: opacity .2s; }
+.nav-item:active { opacity: .6; }
+.nav-icon { font-size: 22px; }
+.nav-label { font-size: 9px; color: var(--text3); letter-spacing: .03em; }
+.nav-item.active .nav-icon { filter: drop-shadow(0 0 6px var(--accent)); }
+.nav-item.active .nav-label { color: var(--accent); }
+
+/* ===== SCROLL ===== */
+.scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; }
+.scroll::-webkit-scrollbar { display: none; }
+
+/* ===== SPLASH ===== */
+#splash { z-index: 999; justify-content: center; align-items: center; gap: 0; }
+.splash-logo { font-size: 42px; font-weight: 800; letter-spacing: -1px; }
+.splash-logo span { color: var(--accent); }
+.splash-sub { font-size: 14px; color: var(--text3); margin-top: 8px; letter-spacing: .1em; }
+.splash-spinner { width: 40px; height: 40px; border: 3px solid var(--bg3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-top: 48px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== PAYWALL ===== */
+#paywall { z-index: 100; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.paywall-hero { padding: 40px 24px 28px; text-align: center; background: linear-gradient(180deg, #1a0a0a 0%, var(--bg) 100%); }
+.paywall-logo { font-size: 32px; font-weight: 800; letter-spacing: -1px; margin-bottom: 6px; }
+.paywall-logo span { color: var(--accent); }
+.paywall-tagline { font-size: 15px; color: var(--text2); line-height: 1.5; }
+.paywall-features { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+.feat-row { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--bg2); border-radius: var(--radius); border: 1px solid var(--border); }
+.feat-icon { font-size: 24px; flex-shrink: 0; }
+.feat-text strong { font-size: 14px; display: block; margin-bottom: 2px; }
+.feat-text span { font-size: 12px; color: var(--text2); }
+.plans-title { text-align: center; font-size: 13px; color: var(--text3); letter-spacing: .1em; padding: 0 20px 12px; }
+.plans { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.plan { background: var(--bg2); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; cursor: pointer; position: relative; transition: border-color .2s, transform .15s; }
+.plan:active { transform: scale(.98); }
+.plan.selected { border-color: var(--accent); background: rgba(230,48,48,.08); }
+.plan.popular { border-color: var(--gold); }
+.plan-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; font-size: 10px; font-weight: 700; padding: 3px 12px; border-radius: 20px; white-space: nowrap; }
+.plan-row { display: flex; justify-content: space-between; align-items: flex-start; }
+.plan-name { font-size: 15px; font-weight: 600; }
+.plan-price { font-size: 20px; font-weight: 700; color: var(--accent); }
+.plan-period { font-size: 11px; color: var(--text3); text-align: right; margin-top: 1px; }
+.plan-saving { display: inline-block; font-size: 10px; background: rgba(46,204,113,.15); color: var(--green); padding: 2px 8px; border-radius: 10px; margin-top: 6px; }
+.pay-btn { margin: 20px 16px 8px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: 16px; font-size: 16px; font-weight: 700; width: calc(100% - 32px); cursor: pointer; letter-spacing: .03em; transition: opacity .2s; }
+.pay-btn:active { opacity: .8; }
+.pay-note { text-align: center; font-size: 11px; color: var(--text3); padding: 0 20px 30px; line-height: 1.6; }
+.demo-link { text-align: center; padding: 0 20px 20px; }
+.demo-link a { color: var(--text2); font-size: 13px; text-decoration: underline; cursor: pointer; }
+
+/* ===== SEARCH SCREEN ===== */
+#search { z-index: 10; }
+.search-header { padding: 8px 16px 12px; background: var(--bg); flex-shrink: 0; }
+.logo-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.logo-small { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+.logo-small span { color: var(--accent); }
+.subscription-badge { font-size: 10px; background: rgba(240,165,0,.15); color: var(--gold); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(240,165,0,.3); font-weight: 600; }
+.search-input-wrap { display: flex; align-items: center; gap: 8px; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 11px 14px; margin-bottom: 10px; }
+.search-input-wrap input { background: none; border: none; color: var(--text); font-size: 15px; flex: 1; outline: none; }
+.search-input-wrap input::placeholder { color: var(--text3); }
+.search-icon { font-size: 18px; flex-shrink: 0; }
+.filter-btn { width: 42px; height: 42px; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex-shrink: 0; }
+
+/* Chips */
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex-shrink: 0; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid var(--border); color: var(--text2); background: var(--bg3); cursor: pointer; transition: all .2s; white-space: nowrap; }
+.chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.chip:active { opacity: .7; }
+
+/* Results */
+.results-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px 8px; flex-shrink: 0; }
+.results-count { font-size: 13px; color: var(--text3); }
+.results-count strong { color: var(--text2); }
+.sort-btn { font-size: 12px; color: var(--accent); cursor: pointer; }
+
+/* Car Cards */
+.car-list { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 10px; }
+.car-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: transform .15s, border-color .2s; active: opacity: .9; }
+.car-card:active { transform: scale(.985); }
+.car-card.featured { border-color: rgba(230,48,48,.4); }
+.car-img-wrap { position: relative; height: 160px; background: var(--bg3); overflow: hidden; }
+.car-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.car-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 60px; opacity: .15; }
+.car-img-wrap .source-tag { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.75); backdrop-filter: blur(4px); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 6px; }
+.car-badge { position: absolute; top: 8px; left: 8px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+.badge-new { background: rgba(46,204,113,.9); color: #000; }
+.badge-used { background: rgba(52,152,219,.9); color: #fff; }
+.badge-promo { background: var(--accent); color: #fff; }
+.car-body { padding: 12px 14px; }
+.car-name { font-size: 16px; font-weight: 700; margin-bottom: 3px; line-height: 1.2; }
+.car-meta { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+.car-specs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.spec-tag { font-size: 11px; padding: 3px 8px; background: var(--bg3); border-radius: 6px; color: var(--text2); border: 1px solid var(--border); }
+.spec-tag.highlight { color: var(--blue); border-color: rgba(52,152,219,.3); background: rgba(52,152,219,.08); }
+.car-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
+.car-price { font-size: 20px; font-weight: 800; color: var(--accent); }
+.car-price-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.car-actions { display: flex; gap: 6px; }
+.btn-heart { width: 36px; height: 36px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: all .2s; }
+.btn-heart.liked { background: rgba(230,48,48,.15); border-color: rgba(230,48,48,.4); }
+.btn-offer { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+/* Loading skeleton */
+.skeleton-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.skel { background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 50%, var(--bg3) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.skel-img { height: 150px; }
+.skel-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.skel-line { height: 14px; }
+
+/* ===== FILTERS PANEL ===== */
+#filters-panel { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; justify-content: flex-end; background: rgba(0,0,0,0); transition: background .3s; pointer-events: none; }
+#filters-panel.open { background: rgba(0,0,0,.7); pointer-events: all; }
+.filters-sheet { background: var(--bg2); border-radius: 20px 20px 0 0; transform: translateY(100%); transition: transform .35s cubic-bezier(.4,0,.2,1); max-height: 85vh; overflow-y: auto; }
+#filters-panel.open .filters-sheet { transform: translateY(0); }
+.filters-handle { width: 40px; height: 4px; background: var(--bg4); border-radius: 2px; margin: 12px auto 16px; }
+.filters-title { font-size: 18px; font-weight: 700; padding: 0 20px 16px; }
+.filter-section { padding: 0 20px 20px; }
+.filter-section-title { font-size: 12px; color: var(--text3); letter-spacing: .08em; margin-bottom: 10px; font-weight: 600; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.filter-chip { padding: 7px 14px; border-radius: 20px; font-size: 13px; border: 1px solid var(--border); color: var(--text2); background: var(--bg3); cursor: pointer; transition: all .2s; }
+.filter-chip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.range-row { display: flex; gap: 8px; }
+.range-input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px; outline: none; }
+.slider-wrap { padding: 0 0 8px; }
+.slider-wrap input[type=range] { width: 100%; accent-color: var(--accent); }
+.slider-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-top: 2px; }
+.filter-apply { margin: 16px 20px 30px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: 15px; font-size: 15px; font-weight: 700; width: calc(100% - 40px); cursor: pointer; }
+.divider { height: 1px; background: var(--border); margin: 0 20px; }
+
+/* ===== DETAIL SCREEN ===== */
+#detail { z-index: 50; }
+.detail-img-wrap { position: relative; height: 220px; background: var(--bg3); flex-shrink: 0; overflow: hidden; }
+.detail-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.detail-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 90px; opacity: .1; }
+.detail-img-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.4); }
+.dot.active { background: #fff; width: 18px; border-radius: 3px; }
+.back-bar { position: absolute; top: 44px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 12px; }
+.back-circle { width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,.55); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; }
+.detail-scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; }
+.detail-scroll::-webkit-scrollbar { display: none; }
+.detail-body { padding: 18px 16px; }
+.detail-title { font-size: 22px; font-weight: 800; line-height: 1.2; margin-bottom: 4px; }
+.detail-sub { font-size: 14px; color: var(--text2); margin-bottom: 14px; }
+.detail-price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; }
+.detail-price { font-size: 28px; font-weight: 800; color: var(--accent); }
+.detail-price-per { font-size: 13px; color: var(--text3); }
+.section-label { font-size: 11px; color: var(--text3); letter-spacing: .1em; font-weight: 700; margin-bottom: 10px; }
+.specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+.spec-cell { background: var(--bg3); border-radius: 10px; padding: 11px 12px; }
+.spec-cell-label { font-size: 10px; color: var(--text3); margin-bottom: 3px; }
+.spec-cell-val { font-size: 14px; font-weight: 600; }
+.equip-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+.equip-item { font-size: 12px; padding: 5px 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text2); }
+.equip-item.premium { border-color: rgba(240,165,0,.3); color: var(--gold); background: rgba(240,165,0,.08); }
+.source-card { background: var(--bg3); border-radius: var(--radius); padding: 14px; margin-bottom: 18px; border: 1px solid var(--border); }
+.source-row { display: flex; justify-content: space-between; align-items: center; }
+.source-name { font-size: 13px; font-weight: 600; }
+.source-domain { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.source-live { font-size: 10px; color: var(--green); background: rgba(46,204,113,.12); padding: 3px 8px; border-radius: 6px; }
+.detail-cta { padding: 0 16px 20px; display: flex; gap: 10px; flex-shrink: 0; }
+.cta-main { flex: 1; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: 15px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.cta-save { width: 52px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; }
+
+/* ===== SAVED SCREEN ===== */
+#saved { z-index: 10; }
+.screen-title { font-size: 22px; font-weight: 800; padding: 16px 16px 12px; flex-shrink: 0; }
+.empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 40px; }
+.empty-icon { font-size: 60px; opacity: .3; }
+.empty-text { font-size: 16px; color: var(--text2); text-align: center; }
+.empty-sub { font-size: 13px; color: var(--text3); text-align: center; }
+
+/* ===== COMPARE SCREEN ===== */
+#compare { z-index: 10; }
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; }
+.compare-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+.compare-card-img { height: 90px; background: var(--bg3); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 36px; opacity: .3; margin-bottom: 8px; overflow: hidden; }
+.compare-card-img img { width: 100%; height: 100%; object-fit: cover; opacity: 1; }
+.compare-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; line-height: 1.2; }
+.compare-price { font-size: 14px; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+.compare-specs { display: flex; flex-direction: column; gap: 4px; }
+.cs-row { display: flex; justify-content: space-between; font-size: 11px; }
+.cs-label { color: var(--text3); }
+.cs-val { color: var(--text2); font-weight: 500; }
+.cs-val.better { color: var(--green); }
+.cs-val.worse { color: var(--accent); }
+.add-compare { background: var(--bg3); border: 1.5px dashed var(--border); border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 24px 12px; cursor: pointer; }
+.add-compare span { font-size: 30px; }
+.add-compare p { font-size: 12px; color: var(--text3); text-align: center; }
+.compare-winner-bar { margin: 0 12px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+.winner-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.winner-value { font-size: 14px; font-weight: 700; color: var(--gold); }
+
+/* ===== ACCOUNT SCREEN ===== */
+#account { z-index: 10; }
+.account-hero { padding: 24px 20px; background: var(--bg2); margin-bottom: 12px; }
+.avatar-wrap { width: 72px; height: 72px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 30px; margin-bottom: 12px; }
+.account-name { font-size: 20px; font-weight: 800; }
+.account-email { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.sub-status { display: inline-flex; align-items: center; gap: 6px; background: rgba(240,165,0,.15); border: 1px solid rgba(240,165,0,.3); color: var(--gold); font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; margin-top: 10px; }
+.menu-section { padding: 0 12px 12px; }
+.menu-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg2); border-radius: 12px; margin-bottom: 6px; cursor: pointer; transition: opacity .2s; }
+.menu-item:active { opacity: .7; }
+.menu-icon { font-size: 20px; width: 36px; height: 36px; background: var(--bg3); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.menu-text strong { display: block; font-size: 14px; font-weight: 600; }
+.menu-text span { font-size: 12px; color: var(--text3); }
+.menu-arrow { margin-left: auto; color: var(--text3); }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 0 12px 12px; }
+.stat-card { background: var(--bg2); border-radius: 12px; padding: 14px 10px; text-align: center; }
+.stat-val { font-size: 22px; font-weight: 800; color: var(--accent); }
+.stat-label { font-size: 10px; color: var(--text3); margin-top: 3px; }
+
+/* ===== TOAST ===== */
+.toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--bg4); border: 1px solid var(--border); color: var(--text); padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 500; z-index: 9999; opacity: 0; transition: all .3s; white-space: nowrap; backdrop-filter: blur(10px); pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== AI SEARCH ===== */
+.ai-search-btn { display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, rgba(230,48,48,.15), rgba(52,152,219,.15)); border: 1px solid rgba(230,48,48,.3); border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; cursor: pointer; transition: opacity .2s; }
+.ai-search-btn:active { opacity: .7; }
+.ai-icon { font-size: 18px; }
+.ai-text { font-size: 13px; color: var(--text2); }
+.ai-text strong { color: var(--text); display: block; font-size: 12px; }
+
+/* ===== SEARCH RESULTS LIVE ===== */
+.live-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--green); }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* Alert/Notification badges */
+.notif-badge { position: absolute; top: 2px; right: 12px; background: var(--accent); color: #fff; font-size: 9px; font-weight: 700; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+
+/* Price history mini chart */
+.price-chart { height: 60px; display: flex; align-items: flex-end; gap: 3px; padding: 8px 0; }
+.price-bar { flex: 1; background: var(--bg4); border-radius: 3px 3px 0 0; transition: height .3s; min-height: 4px; }
+.price-bar.current { background: var(--accent); }
+
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div class="screen" id="splash">
+  <div style="font-size:42px;font-weight:800;letter-spacing:-1px">MAX <span style="color:var(--accent)">AUTO</span></div>
+  <div style="font-size:14px;color:var(--text3);margin-top:8px;letter-spacing:.1em">ZNAJDŹ SWOJE AUTO</div>
+  <div class="splash-spinner"></div>
+</div>
+
+<!-- PAYWALL -->
+<div class="screen hidden" id="paywall">
+  <div class="paywall-hero">
+    <div class="paywall-logo">MAX <span>AUTO</span></div>
+    <div style="font-size:11px;color:var(--text3);letter-spacing:.1em;margin-bottom:12px">AGREGATOR OFERT SAMOCHODOWYCH</div>
+    <div class="paywall-tagline">Przeszukujemy tysiące ogłoszeń z OtOMoto, OLX i AutoScout24 w jednym miejscu</div>
+  </div>
+  
+  <div class="paywall-features">
+    <div class="feat-row">
+      <div class="feat-icon">🔍</div>
+      <div class="feat-text">
+        <strong>Inteligentne wyszukiwanie AI</strong>
+        <span>Opisz auto słowami — znajdziemy najlepsze dopasowania</span>
+      </div>
+    </div>
+    <div class="feat-row">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-text">
+        <strong>Aktualne oferty na żywo</strong>
+        <span>Dane pobierane z OtOMoto, OLX, AutoScout24 w czasie rzeczywistym</span>
+      </div>
+    </div>
+    <div class="feat-row">
+      <div class="feat-icon">📊</div>
+      <div class="feat-text">
+        <strong>Historia cen i analiza rynku</strong>
+        <span>Sprawdź czy cena jest fair — porównaj z rynkiem</span>
+      </div>
+    </div>
+    <div class="feat-row">
+      <div class="feat-icon">🔔</div>
+      <div class="feat-text">
+        <strong>Alerty cenowe</strong>
+        <span>Powiadomienie gdy pojawi się auto spełniające Twoje kryteria</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="plans-title">WYBIERZ PLAN</div>
+  <div class="plans">
+    <div class="plan" id="plan-monthly" onclick="selectPlan('monthly',9,'Miesięczny')">
+      <div class="plan-row">
+        <div>
+          <div class="plan-name">Miesięczny</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">Odnawiany co miesiąc</div>
+        </div>
+        <div style="text-align:right">
+          <div class="plan-price">9 zł</div>
+          <div class="plan-period">/ miesiąc</div>
+        </div>
+      </div>
+    </div>
+    <div class="plan popular selected" id="plan-quarterly" onclick="selectPlan('quarterly',25,'Kwartalny')">
+      <div class="plan-badge">⭐ NAJPOPULARNIEJSZY</div>
+      <div class="plan-row">
+        <div>
+          <div class="plan-name">Kwartalny</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">3 miesiące dostępu</div>
+          <div class="plan-saving">🎯 Oszczędzasz 2 zł vs miesięczny</div>
+        </div>
+        <div style="text-align:right">
+          <div class="plan-price">25 zł</div>
+          <div class="plan-period">/ 3 miesiące</div>
+        </div>
+      </div>
+    </div>
+    <div class="plan" id="plan-yearly" onclick="selectPlan('yearly',79,'Roczny')">
+      <div class="plan-row">
+        <div>
+          <div class="plan-name">Roczny</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">Cały rok dostępu</div>
+          <div class="plan-saving">💰 Oszczędzasz 29 zł • tylko 6,58 zł/mies.</div>
+        </div>
+        <div style="text-align:right">
+          <div class="plan-price">79 zł</div>
+          <div class="plan-period">/ rok</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="pay-btn" onclick="purchase()">Odblokuj dostęp • <span id="pay-price">25 zł</span></button>
+  <div class="pay-note">Płatność BLIK, karta lub PayU. Anuluj kiedy chcesz.<br>Subskrypcja odnawia się automatycznie.</div>
+  <div class="demo-link"><a onclick="demoAccess()">Spróbuj demo (ograniczony dostęp) →</a></div>
+</div>
+
+<!-- MAIN: SEARCH -->
+<div class="screen hidden" id="search">
+  <div class="status-bar">
+    <span class="status-time" id="clock">9:41</span>
+    <div class="status-icons">
+      <span>📶</span><span>🔋</span>
+    </div>
+  </div>
+
+  <div class="search-header">
+    <div class="logo-row">
+      <div class="logo-small">MAX <span>AUTO</span></div>
+      <div class="subscription-badge" id="sub-badge">⭐ PREMIUM</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="search-input-wrap" style="flex:1">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-query" placeholder="BMW, SUV diesel, sedan do 100k..." 
+               oninput="onSearchInput(this.value)" />
+      </div>
+      <div class="filter-btn" onclick="openFilters()">⚙️</div>
+    </div>
+    <div class="ai-search-btn" onclick="aiSearch()">
+      <span class="ai-icon">🤖</span>
+      <div class="ai-text">
+        <strong>Wyszukaj przez AI</strong>
+        Opisz słowami czego szukasz
+      </div>
+      <span style="margin-left:auto;color:var(--text3);font-size:12px">→</span>
+    </div>
+    <div class="chips" id="chips">
+      <div class="chip active" onclick="filterChip(this,'all')">Wszystkie</div>
+      <div class="chip" onclick="filterChip(this,'new')">🆕 Nowe</div>
+      <div class="chip" onclick="filterChip(this,'used')">🔧 Używane</div>
+      <div class="chip" onclick="filterChip(this,'suv')">🚙 SUV</div>
+      <div class="chip" onclick="filterChip(this,'sedan')">🚗 Sedan</div>
+      <div class="chip" onclick="filterChip(this,'diesel')">⛽ Diesel</div>
+      <div class="chip" onclick="filterChip(this,'hybrid')">🌿 Hybryda</div>
+      <div class="chip" onclick="filterChip(this,'electric')">⚡ Elektryczny</div>
+      <div class="chip" onclick="filterChip(this,'4x4')">🏔 4x4</div>
+      <div class="chip" onclick="filterChip(this,'auto')">🔄 Automat</div>
+      <div class="chip" onclick="filterChip(this,'sport')">🏎 Sport</div>
+      <div class="chip" onclick="filterChip(this,'tuning')">🔩 Tuning</div>
+    </div>
+  </div>
+
+  <div class="results-header">
+    <div class="results-count"><strong id="result-count">0</strong> ofert <span class="live-badge"><span class="live-dot"></span>na żywo</span></div>
+    <div class="sort-btn" onclick="toggleSort()">Sortuj: <span id="sort-label">Cena ↑</span></div>
+  </div>
+
+  <div class="scroll">
+    <div class="car-list" id="car-list">
+      <!-- skeleton -->
+      <div class="skeleton-card"><div class="skel skel-img"></div><div class="skel-body"><div class="skel" style="width:70%;height:18px"></div><div class="skel skel-line" style="width:50%"></div><div class="skel skel-line" style="width:90%"></div></div></div>
+      <div class="skeleton-card"><div class="skel skel-img"></div><div class="skel-body"><div class="skel" style="width:60%;height:18px"></div><div class="skel skel-line" style="width:40%"></div><div class="skel skel-line" style="width:80%"></div></div></div>
+      <div class="skeleton-card"><div class="skel skel-img"></div><div class="skel-body"><div class="skel" style="width:75%;height:18px"></div><div class="skel skel-line" style="width:55%"></div><div class="skel skel-line" style="width:70%"></div></div></div>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <div class="nav-item active" onclick="switchTab('search')">
+      <div class="nav-icon">🔍</div>
+      <div class="nav-label">Szukaj</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('saved')" style="position:relative">
+      <div class="nav-icon">❤️</div>
+      <div class="nav-label">Zapisane</div>
+      <div class="notif-badge" id="saved-badge" style="display:none">0</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('compare')">
+      <div class="nav-icon">⚖️</div>
+      <div class="nav-label">Porównaj</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('account')">
+      <div class="nav-icon">👤</div>
+      <div class="nav-label">Konto</div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL SCREEN -->
+<div class="screen hidden" id="detail">
+  <div class="status-bar" style="position:absolute;top:0;left:0;right:0;z-index:10;background:transparent">
+    <span class="status-time" style="color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)">9:41</span>
+    <div class="status-icons" style="color:rgba(255,255,255,.8)"><span>📶</span><span>🔋</span></div>
+  </div>
+  <div class="detail-img-wrap" id="detail-img-wrap">
+    <div class="detail-img-placeholder" id="detail-img-placeholder">🚗</div>
+    <img id="detail-img" src="" style="display:none" />
+    <div class="back-bar">
+      <div class="back-circle" onclick="closeDetail()">←</div>
+      <div class="back-circle" id="detail-share">⬆</div>
+    </div>
+    <div class="detail-img-dots">
+      <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+  </div>
+  <div class="detail-scroll">
+    <div class="detail-body">
+      <div class="detail-title" id="detail-title">–</div>
+      <div class="detail-sub" id="detail-sub">–</div>
+      <div class="detail-price-row">
+        <div class="detail-price" id="detail-price">–</div>
+        <div class="detail-price-per" id="detail-monthly">–</div>
+      </div>
+
+      <div class="section-label">DANE TECHNICZNE</div>
+      <div class="specs-grid" id="detail-specs"></div>
+
+      <div class="section-label">WYPOSAŻENIE</div>
+      <div class="equip-grid" id="detail-equip"></div>
+
+      <div class="section-label">HISTORIA CEN (ostatnie 6 mies.)</div>
+      <div class="price-chart" id="price-chart-bars"></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:18px" id="price-chart-labels"></div>
+
+      <div class="section-label">ŹRÓDŁO OGŁOSZENIA</div>
+      <div class="source-card" id="detail-source-card">
+        <div class="source-row">
+          <div>
+            <div class="source-name" id="detail-source-name">–</div>
+            <div class="source-domain" id="detail-source-domain">–</div>
+          </div>
+          <div class="source-live">● LIVE</div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:var(--radius);padding:14px;margin-bottom:18px;border:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">OCENA CENY</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div id="price-score-bar" style="flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden"><div id="price-score-fill" style="height:100%;border-radius:4px;background:var(--green);width:0%;transition:width 1s"></div></div>
+          <div id="price-score-label" style="font-size:13px;font-weight:700;color:var(--green)">–</div>
+        </div>
+        <div id="price-score-desc" style="font-size:12px;color:var(--text2);margin-top:6px">–</div>
+      </div>
+    </div>
+  </div>
+  <div class="detail-cta">
+    <button class="cta-main" id="detail-link-btn" onclick="openListing()">Przejdź do ogłoszenia →</button>
+    <div class="cta-save" id="detail-save-btn" onclick="toggleSave()">🤍</div>
+  </div>
+</div>
+
+<!-- SAVED SCREEN -->
+<div class="screen hidden" id="saved">
+  <div class="status-bar"><span class="status-time" id="clock2">9:41</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+  <div class="screen-title">Zapisane auta ❤️</div>
+  <div class="scroll" id="saved-list-wrap">
+    <div class="empty-state" id="saved-empty">
+      <div class="empty-icon">💔</div>
+      <div class="empty-text">Brak zapisanych aut</div>
+      <div class="empty-sub">Kliknij ❤️ przy ofercie żeby zapisać</div>
+    </div>
+    <div class="car-list" id="saved-list" style="display:none"></div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Szukaj</div></div>
+    <div class="nav-item active" onclick="switchTab('saved')" style="position:relative"><div class="nav-icon">❤️</div><div class="nav-label">Zapisane</div><div class="notif-badge" id="saved-badge2" style="display:none">0</div></div>
+    <div class="nav-item" onclick="switchTab('compare')"><div class="nav-icon">⚖️</div><div class="nav-label">Porównaj</div></div>
+    <div class="nav-item" onclick="switchTab('account')"><div class="nav-icon">👤</div><div class="nav-label">Konto</div></div>
+  </div>
+</div>
+
+<!-- COMPARE SCREEN -->
+<div class="screen hidden" id="compare">
+  <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+  <div class="screen-title">Porównaj auta ⚖️</div>
+  <div class="scroll">
+    <div class="compare-winner-bar" id="compare-winner" style="display:none">
+      <div class="winner-label">🏆 ZWYCIĘZCA PORÓWNANIA</div>
+      <div class="winner-value" id="winner-name">–</div>
+    </div>
+    <div class="compare-grid" id="compare-grid"></div>
+    <div style="padding:0 12px 20px">
+      <div style="font-size:12px;color:var(--text3);text-align:center">Dodaj auta do porównania klikając ⚖️ w widoku szczegółów</div>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Szukaj</div></div>
+    <div class="nav-item" onclick="switchTab('saved')" style="position:relative"><div class="nav-icon">❤️</div><div class="nav-label">Zapisane</div><div class="notif-badge" id="saved-badge3" style="display:none">0</div></div>
+    <div class="nav-item active" onclick="switchTab('compare')"><div class="nav-icon">⚖️</div><div class="nav-label">Porównaj</div></div>
+    <div class="nav-item" onclick="switchTab('account')"><div class="nav-icon">👤</div><div class="nav-label">Konto</div></div>
+  </div>
+</div>
+
+<!-- ACCOUNT SCREEN -->
+<div class="screen hidden" id="account">
+  <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+  <div class="scroll">
+    <div class="account-hero">
+      <div class="avatar-wrap">👤</div>
+      <div class="account-name" id="acc-name">Użytkownik MAX AUTO</div>
+      <div class="account-email" id="acc-email">premium@maxauto.pl</div>
+      <div class="sub-status" id="sub-status-badge">⭐ PREMIUM — aktywny</div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="stat-searches">0</div><div class="stat-label">Wyszukań</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-saved">0</div><div class="stat-label">Zapisanych</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-alerts">3</div><div class="stat-label">Alertów</div></div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-item" onclick="showToast('🔔 Zarządzaj alertami cenowymi')">
+        <div class="menu-icon">🔔</div>
+        <div class="menu-text"><strong>Alerty cenowe</strong><span>Ustaw powiadomienia o nowych ofertach</span></div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item" onclick="showToast('📊 Historia wyszukiwań')">
+        <div class="menu-icon">📊</div>
+        <div class="menu-text"><strong>Historia wyszukiwań</strong><span>Twoje ostatnie wyszukiwania</span></div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item" onclick="showToast('🔄 Subskrypcja odnawia się automatycznie')">
+        <div class="menu-icon">💳</div>
+        <div class="menu-text"><strong>Subskrypcja</strong><span id="sub-detail">Plan Kwartalny • 25 zł / 3 mies.</span></div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item" onclick="showToast('🌙 Motyw ciemny aktywny')">
+        <div class="menu-icon">🌙</div>
+        <div class="menu-text"><strong>Wygląd</strong><span>Motyw ciemny (aktywny)</span></div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item" onclick="showToast('📞 Wsparcie: support@maxauto.pl')">
+        <div class="menu-icon">📞</div>
+        <div class="menu-text"><strong>Wsparcie</strong><span>Pomoc i kontakt</span></div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item" onclick="logout()" style="margin-top:12px">
+        <div class="menu-icon">🚪</div>
+        <div class="menu-text"><strong style="color:var(--accent)">Wyloguj się</strong><span>Wróć do ekranu logowania</span></div>
+        <div class="menu-arrow">›</div>
+      </div>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="switchTab('search')"><div class="nav-icon">🔍</div><div class="nav-label">Szukaj</div></div>
+    <div class="nav-item" onclick="switchTab('saved')" style="position:relative"><div class="nav-icon">❤️</div><div class="nav-label">Zapisane</div><div class="notif-badge" id="saved-badge4" style="display:none">0</div></div>
+    <div class="nav-item" onclick="switchTab('compare')"><div class="nav-icon">⚖️</div><div class="nav-label">Porównaj</div></div>
+    <div class="nav-item active" onclick="switchTab('account')"><div class="nav-icon">👤</div><div class="nav-label">Konto</div></div>
+  </div>
+</div>
+
+<!-- AI SEARCH DIALOG -->
+<div id="ai-dialog" style="position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.8);display:none;flex-direction:column;justify-content:flex-end">
+  <div style="background:var(--bg2);border-radius:20px 20px 0 0;padding:24px 20px 40px">
+    <div style="font-size:18px;font-weight:800;margin-bottom:6px">🤖 Wyszukiwanie AI</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Opisz słowami czego szukasz — AI znajdzie najlepsze dopasowania</div>
+    <textarea id="ai-input" rows="3" placeholder="np. Szukam family SUV do 150k, diesel lub hybryda, rok 2019+, koniecznie z automatem i kamerą cofania..." 
+      style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;color:var(--text);font-size:14px;resize:none;outline:none;font-family:inherit;line-height:1.5"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button onclick="closeAiDialog()" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px;color:var(--text2);font-size:14px;cursor:pointer">Anuluj</button>
+      <button onclick="submitAiSearch()" style="flex:2;background:var(--accent);border:none;border-radius:12px;padding:13px;color:#fff;font-size:14px;font-weight:700;cursor:pointer">🔍 Szukaj</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px">
+      <div onclick="setAiExample(this)" style="font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;color:var(--text2)">SUV diesel do 100k</div>
+      <div onclick="setAiExample(this)" style="font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;color:var(--text2)">BMW z niskim przebiegiem</div>
+      <div onclick="setAiExample(this)" style="font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;color:var(--text2)">Elektryczny z zasięgiem 400km</div>
+      <div onclick="setAiExample(this)" style="font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;color:var(--text2)">Auto sportowe do tuningu</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTERS PANEL -->
+<div id="filters-panel">
+  <div onclick="closeFilters()" style="position:absolute;inset:0"></div>
+  <div class="filters-sheet">
+    <div class="filters-handle"></div>
+    <div class="filters-title">Filtry wyszukiwania</div>
+
+    <div class="filter-section">
+      <div class="filter-section-title">STAN POJAZDU</div>
+      <div class="filter-chips">
+        <div class="filter-chip on" onclick="toggleFilterChip(this)">Wszystkie</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Nowe z salonu</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Używane</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Po leasingu</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Demo</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="filter-section" style="padding-top:16px">
+      <div class="filter-section-title">CENA (PLN)</div>
+      <div class="range-row">
+        <input class="range-input" type="number" placeholder="Od" id="f-price-min" value="0">
+        <input class="range-input" type="number" placeholder="Do" id="f-price-max" value="500000">
+      </div>
+      <div class="slider-wrap" style="margin-top:10px">
+        <input type="range" min="0" max="500000" step="5000" value="500000" id="price-slider"
+          oninput="document.getElementById('f-price-max').value=this.value">
+        <div class="slider-labels"><span>0 zł</span><span>500 000 zł</span></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="filter-section" style="padding-top:16px">
+      <div class="filter-section-title">ROK PRODUKCJI</div>
+      <div class="range-row">
+        <input class="range-input" type="number" placeholder="Od" value="2010" id="f-year-min">
+        <input class="range-input" type="number" placeholder="Do" value="2025" id="f-year-max">
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="filter-section" style="padding-top:16px">
+      <div class="filter-section-title">PRZEBIEG (km)</div>
+      <div class="slider-wrap">
+        <input type="range" min="0" max="300000" step="5000" value="150000" id="mileage-slider"
+          oninput="document.getElementById('mileage-val').textContent=Math.round(this.value/1000)+'k km'">
+        <div class="slider-labels"><span>0</span><span id="mileage-val">150k km</span><span>300k+</span></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="filter-section" style="padding-top:16px">
+      <div class="filter-section-title">RODZAJ PALIWA</div>
+      <div class="filter-chips">
+        <div class="filter-chip on" onclick="toggleFilterChip(this)">Wszystkie</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Benzyna</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Diesel</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Hybryda</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Elektryczny</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">LPG</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="filter-section" style="padding-top:16px">
+      <div class="filter-section-title">SKRZYNIA BIEGÓW</div>
+      <div class="filter-chips">
+        <div class="filter-chip on" onclick="toggleFilterChip(this)">Wszystkie</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Automat</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Manualna</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">CVT</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="filter-section" style="padding-top:16px">
+      <div class="filter-section-title">NADWOZIE</div>
+      <div class="filter-chips">
+        <div class="filter-chip on" onclick="toggleFilterChip(this)">Wszystkie</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">SUV/Crossover</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Sedan</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Kombi</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Hatchback</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Coupe</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Kabriolet</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Van</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="filter-section" style="padding-top:16px">
+      <div class="filter-section-title">NAPĘD</div>
+      <div class="filter-chips">
+        <div class="filter-chip on" onclick="toggleFilterChip(this)">Wszystkie</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">4x4 / AWD</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Przedni (FWD)</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Tylny (RWD)</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="filter-section" style="padding-top:16px">
+      <div class="filter-section-title">WYPOSAŻENIE / FUNKCJE</div>
+      <div class="filter-chips">
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Nawigacja GPS</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Kamera cofania</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Kamera 360°</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Skórzana tapicerka</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Panorama</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Head-Up Display</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Podgrzewane fotele</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Asystent parkowania</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Apple CarPlay</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Android Auto</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Tempomat adaptacyjny</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Webasto</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="filter-section" style="padding-top:16px">
+      <div class="filter-section-title">TUNING / MODYFIKACJE</div>
+      <div class="filter-chips">
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Stage 1+</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Chip tuning</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Zawieszenie sport</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Felgi niestandardowe</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Wydech sport</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Body kit</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Intercooler</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="filter-section" style="padding-top:16px">
+      <div class="filter-section-title">ŹRÓDŁO OGŁOSZENIA</div>
+      <div class="filter-chips">
+        <div class="filter-chip on" onclick="toggleFilterChip(this)">Wszystkie portale</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">OtOMoto</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">OLX</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">AutoScout24</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Allegro</div>
+        <div class="filter-chip" onclick="toggleFilterChip(this)">Gratka.pl</div>
+      </div>
+    </div>
+
+    <button class="filter-apply" onclick="applyFilters()">✓ Zastosuj filtry</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  subscribed: false,
+  plan: null,
+  savedCars: JSON.parse(localStorage.getItem('maxauto_saved') || '[]'),
+  compareCars: JSON.parse(localStorage.getItem('maxauto_compare') || '[]'),
+  searchCount: parseInt(localStorage.getItem('maxauto_searches') || '0'),
+  currentCar: null,
+  allCars: [],
+  filteredCars: [],
+  activeChip: 'all',
+  sortMode: 0,
+  selectedPlan: { id: 'quarterly', price: 25, name: 'Kwartalny' },
+  currentScreen: 'splash'
+};
+
+// Check saved subscription
+const savedSub = localStorage.getItem('maxauto_sub');
+if (savedSub) {
+  const sub = JSON.parse(savedSub);
+  state.subscribed = true;
+  state.plan = sub;
+}
+
+// ============================================================
+// CAR DATA (realistic Polish market listings)
+// ============================================================
+const CAR_DATABASE = [
+  {
+    id: 1,
+    name: "BMW 3 Series 320d xDrive",
+    brand: "BMW",
+    year: 2022,
+    mileage: 0,
+    price: 189900,
+    fuel: "Diesel",
+    transmission: "Automat",
+    drive: "4x4",
+    type: "Sedan",
+    power: "190 KM",
+    engine: "2.0 TDI",
+    color: "Mineral Grey",
+    condition: "new",
+    source: "OtOMoto",
+    dealer: "BMW Kraków",
+    url: "https://www.otomoto.pl/osobowe/bmw/seria-3",
+    emoji: "🚗",
+    tags: ["4x4","diesel","auto","sedan"],
+    specs: { "Rok": "2022", "Przebieg": "Nowy", "Silnik": "2.0 Diesel 190KM", "Skrzynia": "Automat 8-bieg.", "Napęd": "xDrive 4x4", "Kolor": "Mineral Grey", "VIN": "WBA5R210X0FH..." },
+    equip: ["Nawigacja GPS","Kamera cofania","Skórzana tapicerka","Podgrzewane fotele","Head-Up Display","Asystent pasa","Parktronic","Apple CarPlay","Android Auto","Tempomat adaptacyjny","LED Matrix"],
+    priceHistory: [195000, 192000, 191000, 190000, 190000, 189900],
+    priceScore: 78,
+    priceDesc: "Cena poniżej średniej rynkowej dla tego modelu"
+  },
+  {
+    id: 2,
+    name: "Toyota RAV4 2.5 Hybrid",
+    brand: "Toyota",
+    year: 2021,
+    mileage: 52000,
+    price: 138500,
+    fuel: "Hybryda",
+    transmission: "CVT",
+    drive: "4x4",
+    type: "SUV",
+    power: "218 KM",
+    engine: "2.5 Hybrid",
+    color: "Czerwony",
+    condition: "used",
+    source: "OLX",
+    dealer: null,
+    url: "https://www.olx.pl/motoryzacja/samochody/toyota/",
+    emoji: "🚙",
+    tags: ["suv","hybrid","4x4","auto"],
+    specs: { "Rok": "2021", "Przebieg": "52 000 km", "Silnik": "2.5 Hybrid 218KM", "Skrzynia": "CVT Automat", "Napęd": "AWD 4x4", "Kolor": "Czerwony", "Spalanie": "5.8 l/100km" },
+    equip: ["Nawigacja Toyota Touch","Kamera 360°","Bezkluczykowy dostęp","Panorama","Podgrzewane fotele","Apple CarPlay","Tempomat adaptacyjny","Asystent parkowania","Czujniki deszczu"],
+    priceHistory: [145000, 143000, 141000, 140000, 139000, 138500],
+    priceScore: 85,
+    priceDesc: "Świetna cena — 12% poniżej średniej rynkowej"
+  },
+  {
+    id: 3,
+    name: "Audi A6 3.0 TDI Quattro",
+    brand: "Audi",
+    year: 2019,
+    mileage: 95000,
+    price: 89900,
+    fuel: "Diesel",
+    transmission: "Automat",
+    drive: "4x4",
+    type: "Sedan",
+    power: "286 KM",
+    engine: "3.0 TDI",
+    color: "Czarny Mythos",
+    condition: "used",
+    source: "AutoScout24",
+    dealer: null,
+    url: "https://www.autoscout24.pl/lst/audi/a6",
+    emoji: "🏎️",
+    tags: ["sedan","diesel","4x4","auto","sport"],
+    specs: { "Rok": "2019", "Przebieg": "95 000 km", "Silnik": "3.0 TDI 286KM", "Skrzynia": "Tiptronic 8-bieg.", "Napęd": "Quattro AWD", "Kolor": "Czarny Mythos", "CO₂": "149 g/km" },
+    equip: ["Virtual Cockpit","MMI Navigation plus","Kamera 360°","Skórzana tapicerka Valcona","Matrix LED","Bang & Olufsen","Podgrzewane fotele","Head-Up Display","Masaż foteli","Pneumatyczne zawieszenie"],
+    priceHistory: [98000, 96000, 94000, 92000, 91000, 89900],
+    priceScore: 72,
+    priceDesc: "Cena zbliżona do rynkowej — dobry stan"
+  },
+  {
+    id: 4,
+    name: "Mercedes GLC 220d 4MATIC",
+    brand: "Mercedes",
+    year: 2022,
+    mileage: 18000,
+    price: 224900,
+    fuel: "Diesel",
+    transmission: "Automat",
+    drive: "4x4",
+    type: "SUV",
+    power: "200 KM",
+    engine: "2.0 CDI",
+    color: "Polar White",
+    condition: "used",
+    source: "OtOMoto",
+    dealer: "Mercedes-Benz Warszawa",
+    url: "https://www.otomoto.pl/osobowe/mercedes-benz/klasa-glc",
+    emoji: "🚗",
+    tags: ["suv","diesel","4x4","auto"],
+    specs: { "Rok": "2022", "Przebieg": "18 000 km", "Silnik": "2.0 CDI 200KM", "Skrzynia": "9G-Tronic Automat", "Napęd": "4MATIC AWD", "Kolor": "Polar White", "Stan": "Po leasingu" },
+    equip: ["MBUX Nawigacja","Kamera 360°","AMG Line pakiet","Panorama szyberdach","Skórzana tapicerka","Distronic Plus","Parktronic","Apple CarPlay","LED Intelligent","Ambient Light 64 kolory"],
+    priceHistory: [235000, 232000, 229000, 227000, 226000, 224900],
+    priceScore: 65,
+    priceDesc: "Cena lekko powyżej średniej — premium stan"
+  },
+  {
+    id: 5,
+    name: "Volkswagen Golf 2.0 TSI R",
+    brand: "Volkswagen",
+    year: 2021,
+    mileage: 35000,
+    price: 128000,
+    fuel: "Benzyna",
+    transmission: "Automat",
+    drive: "4x4",
+    type: "Hatchback",
+    power: "320 KM",
+    engine: "2.0 TSI",
+    color: "Lapiz Blue",
+    condition: "used",
+    source: "OtOMoto",
+    dealer: null,
+    url: "https://www.otomoto.pl/osobowe/volkswagen/golf",
+    emoji: "🏎️",
+    tags: ["hatchback","sport","4x4","auto","tuning"],
+    specs: { "Rok": "2021", "Przebieg": "35 000 km", "Silnik": "2.0 TSI 320KM", "Skrzynia": "DSG 7-bieg.", "Napęd": "4Motion AWD", "Kolor": "Lapiz Blue Matt", "0-100": "4.7 sek." },
+    equip: ["Golf R pakiet","Akrapovič wydech","Brembo hamulce","Bucket seats","Digital Cockpit","Harman Kardon","Performance monitor","Drift mode","Launch Control","App Connect"],
+    priceHistory: [138000, 135000, 133000, 130000, 129000, 128000],
+    priceScore: 90,
+    priceDesc: "Doskonała cena — 15% poniżej rynku dla Golf R!"
+  },
+  {
+    id: 6,
+    name: "Tesla Model 3 Long Range AWD",
+    brand: "Tesla",
+    year: 2022,
+    mileage: 28000,
+    price: 178000,
+    fuel: "Elektryczny",
+    transmission: "Automat",
+    drive: "4x4",
+    type: "Sedan",
+    power: "351 KM",
+    engine: "Dual Motor",
+    color: "Pearl White",
+    condition: "used",
+    source: "OLX",
+    dealer: null,
+    url: "https://www.olx.pl/motoryzacja/samochody/tesla/",
+    emoji: "⚡",
+    tags: ["sedan","electric","4x4","auto"],
+    specs: { "Rok": "2022", "Przebieg": "28 000 km", "Silnik": "Dual Motor AWD 351KM", "Skrzynia": "1-biegowa", "Zasięg": "568 km WLTP", "Ładowanie": "250 kW DC", "0-100": "4.4 sek." },
+    equip: ["Autopilot Full Self-Driving","15.4\" ekran dotykowy","Premium sound 14 głośników","Szklany dach panoramiczny","Bezprzewodowe ładowanie","OTA aktualizacje","Sentry Mode","Dog Mode","Camp Mode"],
+    priceHistory: [195000, 191000, 186000, 183000, 180000, 178000],
+    priceScore: 82,
+    priceDesc: "Dobra cena — bateria w dobrym stanie (94%)"
+  },
+  {
+    id: 7,
+    name: "Skoda Octavia RS 2.0 TSI",
+    brand: "Skoda",
+    year: 2020,
+    mileage: 78000,
+    price: 68500,
+    fuel: "Benzyna",
+    transmission: "Automat",
+    drive: "Przedni",
+    type: "Kombi",
+    power: "245 KM",
+    engine: "2.0 TSI",
+    color: "Granatowy",
+    condition: "used",
+    source: "AutoScout24",
+    dealer: null,
+    url: "https://www.autoscout24.pl/lst/skoda/octavia",
+    emoji: "🚗",
+    tags: ["kombi","sport","auto","tuning"],
+    specs: { "Rok": "2020", "Przebieg": "78 000 km", "Silnik": "2.0 TSI 245KM", "Skrzynia": "DSG 7-bieg.", "Napęd": "Przedni FWD", "Kolor": "Granatowy", "0-100": "6.4 sek." },
+    equip: ["RS pakiet","Sportowe fotele","Wirtualny zestaw wskaźników","Canton audio","Nawigacja Columbus","Kamera cofania","Adaptive cruise","DCC zawieszenie adaptacyjne","Sport Select"],
+    priceHistory: [75000, 73000, 71000, 70000, 69000, 68500],
+    priceScore: 88,
+    priceDesc: "Bardzo dobra cena dla Octavii RS w tym stanie"
+  },
+  {
+    id: 8,
+    name: "Ford Mustang 5.0 V8 GT",
+    brand: "Ford",
+    year: 2021,
+    mileage: 22000,
+    price: 198000,
+    fuel: "Benzyna",
+    transmission: "Manualna",
+    drive: "Tylny",
+    type: "Coupe",
+    power: "450 KM",
+    engine: "5.0 V8",
+    color: "Race Red",
+    condition: "used",
+    source: "OtOMoto",
+    dealer: null,
+    url: "https://www.otomoto.pl/osobowe/ford/mustang",
+    emoji: "🐎",
+    tags: ["sport","coupe","tuning"],
+    specs: { "Rok": "2021", "Przebieg": "22 000 km", "Silnik": "5.0 V8 450KM", "Skrzynia": "Manualna 6-bieg.", "Napęd": "Tylny RWD", "Kolor": "Race Red", "0-100": "4.3 sek." },
+    equip: ["Performance Pack","Brembo hamulce","Active Exhaust","B&O Sound","12\" Ekran SYNC","Kamera cofania","Magneride zawieszenie","Launch Control","Line Lock","Track Apps"],
+    priceHistory: [215000, 210000, 207000, 203000, 200000, 198000],
+    priceScore: 75,
+    priceDesc: "Cena rynkowa — stan kolekcjonerski"
+  },
+  {
+    id: 9,
+    name: "Hyundai Tucson 1.6 T-GDI Hybrid",
+    brand: "Hyundai",
+    year: 2023,
+    mileage: 8000,
+    price: 149900,
+    fuel: "Hybryda",
+    transmission: "Automat",
+    drive: "4x4",
+    type: "SUV",
+    power: "230 KM",
+    engine: "1.6 T-GDI",
+    color: "Phantom Black",
+    condition: "used",
+    source: "OtOMoto",
+    dealer: "Hyundai Wrocław",
+    url: "https://www.otomoto.pl/osobowe/hyundai/tucson",
+    emoji: "🚙",
+    tags: ["suv","hybrid","4x4","auto"],
+    specs: { "Rok": "2023", "Przebieg": "8 000 km", "Silnik": "1.6 T-GDI Hybrid 230KM", "Skrzynia": "6-bieg. automat", "Napęd": "HTRAC AWD", "Kolor": "Phantom Black", "Gwarancja": "5 lat" },
+    equip: ["Nawigacja 10.25\"","Kamera 360°","Bose Premium Sound","Bezprzewodowe ładowanie","Head-Up Display","Asystent jazdy po mieście","Smart Parking","Ambient light","Fotele wentylowane"],
+    priceHistory: [157000, 155000, 153000, 152000, 151000, 149900],
+    priceScore: 80,
+    priceDesc: "Dobra cena — jak nowy, prawie bez przebiegu"
+  },
+  {
+    id: 10,
+    name: "Porsche Cayenne 3.0 Turbo",
+    brand: "Porsche",
+    year: 2020,
+    mileage: 45000,
+    price: 389000,
+    fuel: "Benzyna",
+    transmission: "Automat",
+    drive: "4x4",
+    type: "SUV",
+    power: "340 KM",
+    engine: "3.0 Turbo",
+    color: "Night Blue",
+    condition: "used",
+    source: "AutoScout24",
+    dealer: null,
+    url: "https://www.autoscout24.pl/lst/porsche/cayenne",
+    emoji: "🏆",
+    tags: ["suv","sport","4x4","auto","luxury"],
+    specs: { "Rok": "2020", "Przebieg": "45 000 km", "Silnik": "3.0 Turbo 340KM", "Skrzynia": "Tiptronic S 8-bieg.", "Napęd": "Porsche Traction Management", "Kolor": "Night Blue Metallic", "0-100": "5.9 sek." },
+    equip: ["Porsche Communication Management","BOSE Surround Sound","Air Suspension","PASM Sport","Panorama dach","22\" felgi","Sport Chrono Pack","Night Vision","Head-Up Display","Soft Close drzwi"],
+    priceHistory: [420000, 412000, 405000, 398000, 393000, 389000],
+    priceScore: 70,
+    priceDesc: "Cena rynkowa dla Cayenne w tym rocznik"
+  },
+  {
+    id: 11,
+    name: "Seat Leon 2.0 TSI Cupra",
+    brand: "Seat",
+    year: 2019,
+    mileage: 62000,
+    price: 72000,
+    fuel: "Benzyna",
+    transmission: "Automat",
+    drive: "Przedni",
+    type: "Hatchback",
+    power: "300 KM",
+    engine: "2.0 TSI",
+    color: "White Silver",
+    condition: "used",
+    source: "OLX",
+    dealer: null,
+    url: "https://www.olx.pl/motoryzacja/samochody/seat/",
+    emoji: "🏎️",
+    tags: ["hatchback","sport","auto","tuning"],
+    specs: { "Rok": "2019", "Przebieg": "62 000 km", "Silnik": "2.0 TSI 300KM", "Skrzynia": "DSG 7-bieg.", "Napęd": "FWD", "Kolor": "White Silver", "0-100": "5.7 sek." },
+    equip: ["Cupra Sport pakiet","Brembo 340mm hamulce","DCC adaptacyjne zawieszenie","Recaro fotele","Full LED","Kamera cofania","Parktronic","Akrapovič wydech opcja","App Connect"],
+    priceHistory: [79000, 77000, 75000, 74000, 73000, 72000],
+    priceScore: 86,
+    priceDesc: "Bardzo dobra oferta — Cupra 300 poniżej rynku"
+  },
+  {
+    id: 12,
+    name: "Kia Sportage 1.6 T-GDI PHEV",
+    brand: "Kia",
+    year: 2023,
+    mileage: 12000,
+    price: 162500,
+    fuel: "Hybryda",
+    transmission: "Automat",
+    drive: "4x4",
+    type: "SUV",
+    power: "265 KM",
+    engine: "1.6 T-GDI PHEV",
+    color: "Steel Grey",
+    condition: "used",
+    source: "OtOMoto",
+    dealer: "Kia Gdańsk",
+    url: "https://www.otomoto.pl/osobowe/kia/sportage",
+    emoji: "🚙",
+    tags: ["suv","hybrid","4x4","auto"],
+    specs: { "Rok": "2023", "Przebieg": "12 000 km", "Silnik": "1.6 PHEV 265KM", "Skrzynia": "6-bieg. automat", "Napęd": "HTRAC AWD", "Zasięg EV": "70 km", "Gwarancja": "7 lat" },
+    equip: ["Meridian Premium Sound","Dual 12.3\" ekrany","Kamera 360°","Bezprzewodowe ładowanie","Head-Up Display","Highway Driving Assist","Remote Smart Parking","V2L technologia","Fotele wentylowane","Ambient light"],
+    priceHistory: [170000, 168000, 166000, 165000, 163000, 162500],
+    priceScore: 77,
+    priceDesc: "Dobra cena dla PHEV z 7-letnią gwarancją"
+  }
+];
+
+state.allCars = [...CAR_DATABASE];
+state.filteredCars = [...CAR_DATABASE];
+
+// ============================================================
+// CLOCK
+// ============================================================
+function updateClock() {
+  const now = new Date();
+  const t = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  document.querySelectorAll('.status-time').forEach(el => el.textContent = t);
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showScreen(id, anim) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('slide-left');
+    if (s.id !== id && s.id !== 'detail') s.classList.add('hidden');
+    else if (s.id === id) s.classList.remove('hidden');
+  });
+  state.currentScreen = id;
+}
+
+function switchTab(tab) {
+  ['search','saved','compare','account'].forEach(t => {
+    const s = document.getElementById(t);
+    if (t === tab) s.classList.remove('hidden');
+    else { s.classList.add('hidden'); s.classList.remove('slide-left'); }
+  });
+  updateNavBars(tab);
+  state.currentScreen = tab;
+  if (tab === 'saved') renderSaved();
+  if (tab === 'compare') renderCompare();
+  if (tab === 'account') renderAccount();
+}
+
+function updateNavBars(active) {
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.remove('active');
+  });
+  document.querySelectorAll(`.nav-item[onclick*="${active}"]`).forEach(el => el.classList.add('active'));
+}
+
+// ============================================================
+// PAYWALL
+// ============================================================
+let selectedPlanId = 'quarterly';
+
+function selectPlan(id, price, name) {
+  selectedPlanId = id;
+  state.selectedPlan = { id, price, name };
+  document.querySelectorAll('.plan').forEach(p => p.classList.remove('selected'));
+  document.getElementById(`plan-${id}`).classList.add('selected');
+  document.getElementById('pay-price').textContent = price + ' zł';
+}
+
+function purchase() {
+  // Simulate payment flow
+  const btn = document.querySelector('.pay-btn');
+  btn.textContent = '⏳ Przetwarzanie...';
+  btn.disabled = true;
+  setTimeout(() => {
+    const sub = { plan: state.selectedPlan, date: new Date().toISOString() };
+    localStorage.setItem('maxauto_sub', JSON.stringify(sub));
+    state.subscribed = true;
+    state.plan = sub;
+    showScreen('search');
+    setTimeout(() => showToast('✅ Dostęp odblokowany! Witaj w MAX AUTO Premium'), 400);
+    loadCars();
+  }, 1800);
+}
+
+function demoAccess() {
+  state.subscribed = false;
+  state.plan = { plan: { name: 'Demo', price: 0 } };
+  showScreen('search');
+  setTimeout(() => showToast('👀 Tryb demo — ograniczony dostęp'), 400);
+  loadCars();
+}
+
+// ============================================================
+// SPLASH → PAYWALL / APP
+// ============================================================
+setTimeout(() => {
+  if (state.subscribed) {
+    showScreen('search');
+    loadCars();
+  } else {
+    showScreen('paywall');
+  }
+}, 2200);
+
+// ============================================================
+// SEARCH & FILTER
+// ============================================================
+let searchTimer;
+function onSearchInput(val) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    filterCars(val, state.activeChip);
+    state.searchCount++;
+    localStorage.setItem('maxauto_searches', state.searchCount);
+  }, 300);
+}
+
+function filterChip(el, type) {
+  document.querySelectorAll('#chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  state.activeChip = type;
+  const q = document.getElementById('search-query').value;
+  filterCars(q, type);
+}
+
+function filterCars(query, chip) {
+  let cars = [...CAR_DATABASE];
+  const q = (query || '').toLowerCase();
+  
+  if (q) {
+    cars = cars.filter(c => {
+      return c.name.toLowerCase().includes(q) ||
+             c.brand.toLowerCase().includes(q) ||
+             c.fuel.toLowerCase().includes(q) ||
+             c.type.toLowerCase().includes(q) ||
+             c.tags.some(t => t.includes(q)) ||
+             (c.engine && c.engine.toLowerCase().includes(q)) ||
+             c.equip.some(e => e.toLowerCase().includes(q));
+    });
+  }
+  
+  if (chip && chip !== 'all') {
+    cars = cars.filter(c => {
+      if (chip === 'new') return c.condition === 'new';
+      if (chip === 'used') return c.condition === 'used';
+      if (chip === 'suv') return c.type.toLowerCase().includes('suv');
+      if (chip === 'sedan') return c.type === 'Sedan';
+      if (chip === 'diesel') return c.fuel === 'Diesel';
+      if (chip === 'hybrid') return c.fuel === 'Hybryda';
+      if (chip === 'electric') return c.fuel === 'Elektryczny';
+      if (chip === '4x4') return c.drive === '4x4';
+      if (chip === 'auto') return c.transmission === 'Automat' || c.transmission === 'CVT';
+      if (chip === 'sport') return c.tags.includes('sport');
+      if (chip === 'tuning') return c.tags.includes('tuning');
+      return true;
+    });
+  }
+  
+  applySortMode(cars);
+}
+
+function applySortMode(cars) {
+  const modes = [
+    (a,b) => a.price - b.price,
+    (a,b) => b.price - a.price,
+    (a,b) => a.mileage - b.mileage,
+    (a,b) => b.year - a.year,
+    (a,b) => b.priceScore - a.priceScore,
+  ];
+  cars.sort(modes[state.sortMode] || modes[0]);
+  state.filteredCars = cars;
+  renderCarList(cars);
+}
+
+function toggleSort() {
+  const labels = ['Cena ↑','Cena ↓','Przebieg ↑','Rok ↓','Ocena'];
+  state.sortMode = (state.sortMode + 1) % labels.length;
+  document.getElementById('sort-label').textContent = labels[state.sortMode];
+  applySortMode([...state.filteredCars]);
+}
+
+// ============================================================
+// RENDER CARS
+// ============================================================
+function loadCars() {
+  document.getElementById('result-count').textContent = '...';
+  setTimeout(() => {
+    renderCarList(CAR_DATABASE);
+  }, 800);
+}
+
+function renderCarList(cars) {
+  document.getElementById('result-count').textContent = cars.length;
+  const list = document.getElementById('car-list');
+  
+  if (!cars.length) {
+    list.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3)">
+      <div style="font-size:48px;margin-bottom:12px">🔍</div>
+      <div style="font-size:16px">Brak wyników</div>
+      <div style="font-size:13px;margin-top:6px">Zmień filtry lub wyszukiwanie</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = cars.map(car => {
+    const saved = state.savedCars.find(s => s.id === car.id);
+    const km = car.mileage ? `${car.mileage.toLocaleString('pl')} km` : 'Nowy';
+    const badge = car.condition === 'new'
+      ? `<div class="car-badge badge-new">🆕 NOWE</div>`
+      : car.priceScore >= 85
+        ? `<div class="car-badge badge-promo">🔥 HOT DEAL</div>`
+        : `<div class="car-badge badge-used">✅ UŻYWANE</div>`;
+    const source = car.dealer ? `${car.dealer}` : car.source;
+    
+    return `<div class="car-card ${car.priceScore >= 85 ? 'featured' : ''}" onclick="openDetail(${car.id})">
+      <div class="car-img-wrap">
+        <div class="car-img-placeholder">${car.emoji}</div>
+        ${badge}
+        <div class="source-tag">${car.source}</div>
+      </div>
+      <div class="car-body">
+        <div class="car-name">${car.name}</div>
+        <div class="car-meta">${car.year} • ${km} • ${source}</div>
+        <div class="car-specs">
+          <span class="spec-tag">${car.fuel}</span>
+          <span class="spec-tag">${car.power}</span>
+          <span class="spec-tag">${car.transmission}</span>
+          ${car.drive === '4x4' ? `<span class="spec-tag highlight">4x4</span>` : ''}
+          ${car.type !== 'Sedan' ? `<span class="spec-tag">${car.type}</span>` : ''}
+        </div>
+        <div class="car-bottom">
+          <div>
+            <div class="car-price">${car.price.toLocaleString('pl')} zł</div>
+            <div class="car-price-sub">≈ ${Math.round(car.price/60).toLocaleString('pl')} zł/mies. leasing</div>
+          </div>
+          <div class="car-actions">
+            <div class="btn-heart ${saved ? 'liked' : ''}" onclick="event.stopPropagation();toggleSaveCar(${car.id})" id="heart-${car.id}">${saved ? '❤️' : '🤍'}</div>
+            <button class="btn-offer" onclick="event.stopPropagation();openDetail(${car.id})">Szczegóły →</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// DETAIL
+// ============================================================
+function openDetail(id) {
+  const car = CAR_DATABASE.find(c => c.id === id);
+  if (!car) return;
+  state.currentCar = car;
+  
+  // Fill detail screen
+  document.getElementById('detail-title').textContent = car.name;
+  document.getElementById('detail-sub').textContent = 
+    `${car.year} • ${car.mileage ? car.mileage.toLocaleString('pl') + ' km' : 'Nowy'} • ${car.dealer || car.source}`;
+  document.getElementById('detail-price').textContent = car.price.toLocaleString('pl') + ' zł';
+  document.getElementById('detail-monthly').textContent = `≈ ${Math.round(car.price/60).toLocaleString('pl')} zł/mies.`;
+  
+  // Specs grid
+  const specsEl = document.getElementById('detail-specs');
+  specsEl.innerHTML = Object.entries(car.specs).map(([k,v]) => 
+    `<div class="spec-cell"><div class="spec-cell-label">${k.toUpperCase()}</div><div class="spec-cell-val">${v}</div></div>`
+  ).join('');
+  
+  // Equipment
+  const equipEl = document.getElementById('detail-equip');
+  equipEl.innerHTML = car.equip.map((e,i) =>
+    `<div class="equip-item ${i < 3 ? 'premium' : ''}">${i < 3 ? '⭐ ' : ''}${e}</div>`
+  ).join('');
+  
+  // Price history chart
+  const bars = document.getElementById('price-chart-bars');
+  const labelsEl = document.getElementById('price-chart-labels');
+  const maxP = Math.max(...car.priceHistory);
+  const months = ['Lis','Gru','Sty','Lut','Mar','Kwi'];
+  bars.innerHTML = car.priceHistory.map((p,i) => 
+    `<div class="price-bar ${i === car.priceHistory.length-1 ? 'current' : ''}" 
+          style="height:${Math.round((p/maxP)*50)+10}px" title="${p.toLocaleString('pl')} zł"></div>`
+  ).join('');
+  labelsEl.innerHTML = months.map(m => `<span>${m}</span>`).join('');
+  
+  // Price score
+  setTimeout(() => {
+    document.getElementById('price-score-fill').style.width = car.priceScore + '%';
+    const scoreColor = car.priceScore >= 80 ? 'var(--green)' : car.priceScore >= 65 ? 'var(--gold)' : 'var(--accent)';
+    document.getElementById('price-score-fill').style.background = scoreColor;
+    document.getElementById('price-score-label').style.color = scoreColor;
+    document.getElementById('price-score-label').textContent = car.priceScore + '/100';
+    document.getElementById('price-score-desc').textContent = car.priceDesc;
+  }, 300);
+  
+  // Source
+  document.getElementById('detail-source-name').textContent = car.dealer || `Ogłoszenie prywatne • ${car.source}`;
+  document.getElementById('detail-source-domain').textContent = car.source.toLowerCase() + '.pl';
+  
+  // Save button
+  const isSaved = state.savedCars.find(s => s.id === car.id);
+  document.getElementById('detail-save-btn').textContent = isSaved ? '❤️' : '🤍';
+  
+  // Show detail
+  document.getElementById('detail').classList.remove('hidden');
+}
+
+function closeDetail() {
+  document.getElementById('detail').classList.add('hidden');
+  state.currentCar = null;
+}
+
+function openListing() {
+  if (state.currentCar) {
+    if (!state.subscribed) {
+      showToast('⭐ Kup subskrypcję żeby przejść do oferty');
+      return;
+    }
+    window.open(state.currentCar.url, '_blank');
+    showToast('🔗 Otwieranie ogłoszenia w przeglądarce...');
+  }
+}
+
+function toggleSave() {
+  if (!state.currentCar) return;
+  toggleSaveCar(state.currentCar.id);
+  const isSaved = state.savedCars.find(s => s.id === state.currentCar.id);
+  document.getElementById('detail-save-btn').textContent = isSaved ? '❤️' : '🤍';
+}
+
+// ============================================================
+// SAVED
+// ============================================================
+function toggleSaveCar(id) {
+  const car = CAR_DATABASE.find(c => c.id === id);
+  const idx = state.savedCars.findIndex(s => s.id === id);
+  if (idx >= 0) {
+    state.savedCars.splice(idx, 1);
+    showToast('💔 Usunięto z zapisanych');
+    document.getElementById(`heart-${id}`).textContent = '🤍';
+    document.getElementById(`heart-${id}`).classList.remove('liked');
+  } else {
+    state.savedCars.push(car);
+    showToast('❤️ Zapisano!');
+    document.getElementById(`heart-${id}`).textContent = '❤️';
+    document.getElementById(`heart-${id}`).classList.add('liked');
+  }
+  localStorage.setItem('maxauto_saved', JSON.stringify(state.savedCars));
+  updateSavedBadge();
+}
+
+function updateSavedBadge() {
+  const n = state.savedCars.length;
+  ['saved-badge','saved-badge2','saved-badge3','saved-badge4'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = n; el.style.display = n > 0 ? 'flex' : 'none'; }
+  });
+}
+updateSavedBadge();
+
+function renderSaved() {
+  const list = document.getElementById('saved-list');
+  const empty = document.getElementById('saved-empty');
+  if (!state.savedCars.length) {
+    empty.style.display = 'flex';
+    list.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  list.style.display = 'flex';
+  list.innerHTML = state.savedCars.map(car => {
+    const km = car.mileage ? `${car.mileage.toLocaleString('pl')} km` : 'Nowy';
+    return `<div class="car-card" onclick="openDetail(${car.id})">
+      <div class="car-img-wrap">
+        <div class="car-img-placeholder">${car.emoji}</div>
+        <div class="source-tag">${car.source}</div>
+      </div>
+      <div class="car-body">
+        <div class="car-name">${car.name}</div>
+        <div class="car-meta">${car.year} • ${km}</div>
+        <div class="car-bottom">
+          <div class="car-price">${car.price.toLocaleString('pl')} zł</div>
+          <div class="car-actions">
+            <div class="btn-heart liked" onclick="event.stopPropagation();toggleSaveCar(${car.id});renderSaved()">❤️</div>
+            <button class="btn-offer" onclick="event.stopPropagation();openDetail(${car.id})">Szczegóły →</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// COMPARE
+// ============================================================
+function renderCompare() {
+  const grid = document.getElementById('compare-grid');
+  const cars = state.compareCars.slice(0,2);
+  let slots = [...cars];
+  while (slots.length < 2) slots.push(null);
+  
+  if (cars.length >= 2) {
+    const c1 = cars[0], c2 = cars[1];
+    const winner = c1.priceScore >= c2.priceScore ? c1 : c2;
+    document.getElementById('compare-winner').style.display = 'block';
+    document.getElementById('winner-name').textContent = `${winner.name} (${winner.priceScore}/100)`;
+  } else {
+    document.getElementById('compare-winner').style.display = 'none';
+  }
+  
+  grid.innerHTML = slots.map((car, i) => car ? `
+    <div class="compare-card">
+      <div class="compare-card-img">${car.emoji}</div>
+      <div class="compare-name">${car.name}</div>
+      <div class="compare-price">${car.price.toLocaleString('pl')} zł</div>
+      <div class="compare-specs">
+        <div class="cs-row"><span class="cs-label">Rok</span><span class="cs-val">${car.year}</span></div>
+        <div class="cs-row"><span class="cs-label">Przebieg</span><span class="cs-val">${car.mileage ? car.mileage.toLocaleString('pl')+'km' : 'Nowy'}</span></div>
+        <div class="cs-row"><span class="cs-label">Moc</span><span class="cs-val">${car.power}</span></div>
+        <div class="cs-row"><span class="cs-label">Paliwo</span><span class="cs-val">${car.fuel}</span></div>
+        <div class="cs-row"><span class="cs-label">Ocena</span>
+          <span class="cs-val ${car.priceScore >= 80 ? 'better' : car.priceScore < 70 ? 'worse' : ''}">${car.priceScore}/100</span>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px">
+        <button onclick="openDetail(${car.id})" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px;font-size:11px;color:var(--text2);cursor:pointer">Szczegóły</button>
+        <button onclick="removeCompare(${car.id})" style="background:rgba(230,48,48,.1);border:1px solid rgba(230,48,48,.3);border-radius:8px;padding:7px 10px;font-size:11px;color:var(--accent);cursor:pointer">✕</button>
+      </div>
+    </div>` :
+    `<div class="add-compare" onclick="switchTab('search')">
+      <span>➕</span>
+      <p>Dodaj auto do porównania</p>
+    </div>`
+  ).join('');
+}
+
+function removeCompare(id) {
+  state.compareCars = state.compareCars.filter(c => c.id !== id);
+  localStorage.setItem('maxauto_compare', JSON.stringify(state.compareCars));
+  renderCompare();
+}
+
+// Add compare from detail
+document.getElementById('detail-share').addEventListener('click', () => {
+  if (!state.currentCar) return;
+  const exists = state.compareCars.find(c => c.id === state.currentCar.id);
+  if (exists) { showToast('⚖️ Już jest w porównaniu'); return; }
+  if (state.compareCars.length >= 2) {
+    state.compareCars.shift();
+  }
+  state.compareCars.push(state.currentCar);
+  localStorage.setItem('maxauto_compare', JSON.stringify(state.compareCars));
+  showToast('⚖️ Dodano do porównania!');
+});
+
+// ============================================================
+// ACCOUNT
+// ============================================================
+function renderAccount() {
+  document.getElementById('stat-searches').textContent = state.searchCount;
+  document.getElementById('stat-saved').textContent = state.savedCars.length;
+  if (state.plan) {
+    document.getElementById('sub-detail').textContent = 
+      `Plan ${state.plan.plan.name} • ${state.plan.plan.price} zł`;
+    document.getElementById('sub-status-badge').textContent = 
+      state.subscribed ? `⭐ PREMIUM — aktywny` : '👀 Demo — upgrade dostępny';
+  }
+}
+
+function logout() {
+  if (confirm('Wylogować się?')) {
+    localStorage.removeItem('maxauto_sub');
+    state.subscribed = false;
+    state.plan = null;
+    showScreen('paywall');
+  }
+}
+
+// ============================================================
+// FILTERS
+// ============================================================
+function openFilters() {
+  document.getElementById('filters-panel').classList.add('open');
+}
+function closeFilters() {
+  document.getElementById('filters-panel').classList.remove('open');
+}
+function toggleFilterChip(el) {
+  el.classList.toggle('on');
+}
+function applyFilters() {
+  closeFilters();
+  showToast('✅ Filtry zastosowane');
+  const q = document.getElementById('search-query').value;
+  filterCars(q, state.activeChip);
+}
+
+// ============================================================
+// AI SEARCH
+// ============================================================
+function aiSearch() {
+  document.getElementById('ai-dialog').style.display = 'flex';
+}
+function closeAiDialog() {
+  document.getElementById('ai-dialog').style.display = 'none';
+}
+function setAiExample(el) {
+  document.getElementById('ai-input').value = el.textContent;
+}
+function submitAiSearch() {
+  const query = document.getElementById('ai-input').value;
+  if (!query.trim()) return;
+  closeAiDialog();
+  document.getElementById('search-query').value = query;
+  showToast('🤖 AI analizuje zapytanie...');
+  setTimeout(() => {
+    filterCars(query, 'all');
+    document.querySelectorAll('#chips .chip').forEach(c => c.classList.remove('active'));
+    document.querySelector('#chips .chip').classList.add('active');
+    showToast(`🎯 Znaleziono ${state.filteredCars.length} dopasowań`);
+  }, 1200);
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ============================================================
+// SWIPE BACK (for detail screen)
+// ============================================================
+let touchStartX = 0;
+document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive: true});
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (dx > 80 && touchStartX < 30) {
+    if (!document.getElementById('detail').classList.contains('hidden')) {
+      closeDetail();
+    }
+  }
+}, {passive: true});
+
+// ============================================================
+// INIT
+// ============================================================
+if (state.subscribed) {
+  setTimeout(() => { showScreen('search'); loadCars(); }, 100);
+}
+</script>
+</body>
+</html>
